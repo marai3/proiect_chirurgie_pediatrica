@@ -2,14 +2,15 @@ from fastapi import FastAPI, Form, HTTPException, Depends
 from pydantic import BaseModel
 from passlib.context import CryptContext
 import pandas as pd
-from auth import create_access_token, fake_users_db, role_required
+from .auth import create_access_token, fake_users_db, role_required
+from .database import df
 
 app = FastAPI()
 
 pwd_context = CryptContext(schemes=["bcrypt"])
 
 # Simulated local storage
-df = pd.DataFrame()
+#df = pd.DataFrame()
 
 class VitalData(BaseModel):
     patient_id: str
@@ -17,6 +18,7 @@ class VitalData(BaseModel):
     spo2: float
     temperature: float
     timestamp: str
+
 @app.post("/token")
 def login(username: str = Form(...), password: str = Form(...)):
     user = fake_users_db.get(username)
@@ -34,9 +36,18 @@ def export_json():
     df.to_json("data/export_r.json", orient="records", lines=True)
     return {"message": "Export JSON pentru R salvat."}
 
+@app.get("/export/csv")
+def export_csv():
+    df.to_csv("data/export_r.csv", index=False)
+    return {"message": "Export CSV salvat."}
+
 @app.post("/submit")
 def submit_vitals(data: VitalData):
     global df
     entry = data.dict()
     df = pd.concat([df, pd.DataFrame([entry])], ignore_index=True)
     return {"message": "Date înregistrate."}
+
+@app.post("/")
+def root():
+    return {"message": "API-ul este activ."}

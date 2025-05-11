@@ -13,13 +13,18 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 fake_users_db = {
     "medic": {
         "username": "medic",
-        "hashed_password": "$2b$12$wxyz",  # hash bcrypt
+        "hashed_password": "$2b$12$7u4yY6HPiOBKsPK3l3F2JO4c9bSOYSFzoDdxiQTKvR1GgOLJYs8te",  # parola: medic123
         "role": "doctor"
     },
     "asistent": {
         "username": "asistent",
-        "hashed_password": "$2b$12$abcd",  # hash bcrypt
+        "hashed_password": "$2b$12$JwwGFbZeHUcvFD..nKf7RuIIo89H4gJ4ZiTCUhAn5QPPkFFJ/z30y",  # parola: asistent123
         "role": "nurse"
+    },
+    "cercetator": {
+        "username": "cercetator",
+        "hashed_password": "$2b$12$Ovcu.stuJ4l1mSV7MWTsH.2EX6F1aCQq0oeAnGu9QOEuqU7MWNfxi",  # parola: research123
+        "role": "researcher"
     }
 }
 
