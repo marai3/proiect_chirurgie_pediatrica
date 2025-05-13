@@ -1,13 +1,11 @@
-<<<<<<< HEAD
 from sqlalchemy import (
     create_engine, Column, Integer, String, Float, DateTime, ForeignKey, Text
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+
+from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 import datetime
 
-# -> Ai nevoie de PostgreSQL activ și de o bază numită 'clinica'
-DATABASE_URL = "postgresql://postgres:password@localhost/clinica"  # ← adaptează parola și baza ta
+DATABASE_URL = "postgresql://postgres:password@localhost/clinica"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -66,7 +64,7 @@ class AccessLog(Base):
     patient_id = Column(String)
     username = Column(String)
     role = Column(String)
-    event_type = Column(String)            # ex: ACCESS_VIEW, DATA_SUBMIT
+    event_type = Column(String)            # ex: ACCESS_VIEW, DATA_SUBMIT, DATA_UPDATE, DATA_DELETE
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
 class User(Base):
@@ -77,26 +75,3 @@ class User(Base):
 
 def init_db():
     Base.metadata.create_all(bind=engine)
-=======
-import pandas as pd
-
-# Inițializăm DataFrame-ul cu structura de date dorită
-df = pd.DataFrame(columns=["patient_id", "heart_rate", "spo2", "temperature", "timestamp"])
-
-# Funcție de salvare a unei înregistrări noi
-def save_vital_data(entry: dict):
-    global df
-    df.loc[len(df)] = entry
-
-# Funcție pentru extragerea ultimelor înregistrări
-def get_latest_entries(n=10):
-    return df.tail(n).to_dict(orient="records")
-
-# Funcție pentru export CSV
-def export_csv(path="data/export.csv"):
-    df.to_csv(path, index=False)
-
-# Funcție pentru export JSON
-def export_json(path="data/export.json"):
-    df.to_json(path, orient="records", lines=True)
->>>>>>> 4de70005ada7e99a8eb21320c7e745b4696340fe
