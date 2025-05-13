@@ -9,7 +9,6 @@ def pagina_adauga_rezultate():
         return
 
     st.title("Adăugare Rezultate Laborator")
-    st.write("---")
     
     with st.form("form_lab_results", clear_on_submit=True):
         patient_id = st.text_input("ID Pacient*")

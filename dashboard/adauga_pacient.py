@@ -9,7 +9,6 @@ def pagina_adauga_pacient():
         return
 
     st.title("Adăugare Pacient Nou")
-    st.write("---")
     
     with st.form("form_pacient", clear_on_submit=True):
         cols = st.columns(2)

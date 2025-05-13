@@ -75,7 +75,6 @@ else:
         adauga_pacient.pagina_adauga_pacient()
     elif pagina == "adauga_rezultate":  
         adauga_rezultat.pagina_adauga_rezultate()
-        pass
     elif pagina == "export":
         #pagina_export()
         pass
