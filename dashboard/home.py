@@ -33,6 +33,8 @@ def render_sidebar():
         st.session_state.page = "adauga"
     if st.sidebar.button("Export", key="export"):
         st.session_state.page = "export"
+    if st.sidebar.button("Vizualizare", key="vizualizare"):
+        st.session_state.page = "vizualizare"
     if st.sidebar.button("Logout", key="logout"):
         st.session_state.username = None
         st.session_state.role = None
