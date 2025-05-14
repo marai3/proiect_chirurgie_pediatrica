@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 from jose import jwt
 import grafice as grafice
-import adauga_pacient
+import adauga_pacient 
 import adauga_rezultat
 
 def login_form():
