@@ -14,7 +14,7 @@ Base = declarative_base()
 
 class Patient(Base):
     __tablename__ = "patients"
-    patient_id = Column(String, primary_key=True, index=True)  # ex: P001
+    patient_id = Column(Integer, primary_key=True, index=True, autoincrement=True)  # ex: 1
     pseudonym = Column(String, nullable=False)
     date_of_birth = Column(DateTime)
     gender = Column(String)
@@ -26,8 +26,8 @@ class Patient(Base):
 
 class VitalSigns(Base):
     __tablename__ = "vital_signs"
-    id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(String, ForeignKey("patients.patient_id"))
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    patient_id = Column(Integer, ForeignKey("patients.patient_id"))
     heart_rate = Column(Integer)
     spo2 = Column(Float)
     temperature = Column(Float)
@@ -38,8 +38,8 @@ class VitalSigns(Base):
 
 class LabResult(Base):
     __tablename__ = "lab_results"
-    id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(String, ForeignKey("patients.patient_id"))
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    patient_id = Column(Integer, ForeignKey("patients.patient_id"))
     test_name = Column(String)            # ex: CRP, leucocite
     value = Column(Float)
     units = Column(String)
@@ -50,8 +50,8 @@ class LabResult(Base):
 
 class ClinicalScore(Base):
     __tablename__ = "clinical_scores"
-    id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(String, ForeignKey("patients.patient_id"))
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    patient_id = Column(Integer, ForeignKey("patients.patient_id"))
     score_type = Column(String)           # ex: PEWS, NEWS
     score_value = Column(Integer)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
@@ -60,11 +60,11 @@ class ClinicalScore(Base):
 
 class AccessLog(Base):
     __tablename__ = "access_logs"
-    id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(String)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    patient_id = Column(Integer, ForeignKey("patients.patient_id"))
     username = Column(String)
     role = Column(String)
-    event_type = Column(String)            # ex: ACCESS_VIEW, DATA_SUBMIT, DATA_UPDATE, DATA_DELETE
+    event_type = Column(String)            # ex: View, Edit, Delete, Add
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
 class User(Base):
@@ -75,3 +75,7 @@ class User(Base):
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    #Base.metadata.drop_all(bind=engine)  # Uncomment to drop all tables
+
+if __name__ == "__main__":
+    init_db()

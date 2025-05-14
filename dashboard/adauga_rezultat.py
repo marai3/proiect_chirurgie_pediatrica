@@ -1,10 +1,14 @@
 import streamlit as st
 from datetime import datetime
 import pandas as pd
-#from home import render_sidebar
+
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from app.database import SessionLocal, LabResult
 
 def pagina_adauga_rezultate():
-    if st.session_state.role not in ["doctor", "nurse"]:
+    if st.session_state.role not in ["doctor", "nurse", "admin"]:
         st.warning("Nu aveți permisiuni pentru această secțiune")
         return
 
@@ -33,3 +37,18 @@ def pagina_adauga_rezultate():
             else:
                 st.success("Rezultat laborator înregistrat cu succes!")
                 st.balloons()
+    
+    # Save to database
+    db = SessionLocal()
+    new_result = LabResult(
+        patient_id=patient_id,
+        test_name=test_name,
+        value=value,
+        units=units,
+        reference_range=reference_range,
+        timestamp=data_rezultat
+    )
+    db.add(new_result)
+    db.commit()
+    db.refresh(new_result)
+    db.close()

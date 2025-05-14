@@ -1,57 +1,46 @@
 import streamlit as st
 import pandas as pd
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime
-from home import render_sidebar
-import datetime
-#from .database import Patient 
 
-# Configurare conexiune la baza de date
-DATABASE_URL = "postgresql://postgres:password@localhost/clinica"  # ← modifică dacă e nevoie
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from app.database import SessionLocal, Patient
 
-Base = declarative_base()
+def pagina_vizualizare():
+    # Interfață Streamlit
+    st.title("Vizualizare Pacienți")
+    st.write("---")
 
-# Funcție pentru a prelua pacienții
-##def get_all_patients(session):
-   ## return session.query(Patient).all()
+    st.title("Lista pacienților")
 
-# Interfață Streamlit
-st.set_page_config(page_title="Pacienți - Clinica", layout="wide")
-st.title("Lista pacienților")
+    # Căutare
+    search_term = st.text_input("Caută după nume sau cod pacient (ID):").lower()
 
-# Căutare
-search_term = st.text_input("🔍 Caută după nume sau cod pacient (ID):").lower()
+    # Preluăm pacienții
+    db = SessionLocal()
+    patients = db.query(Patient).all()
 
-# Deschidem sesiunea SQLAlchemy
-session = SessionLocal()
+    # Convertim în DataFrame
+    data = [
+        {
+            "ID": p.patient_id,
+            "Nume": p.pseudonym,
+            "Data nașterii": p.date_of_birth.strftime("%Y-%m-%d") if p.date_of_birth else "",
+            "Gen": p.gender,
+            "Creat la": p.created_at.strftime("%Y-%m-%d %H:%M")
+        }
+        for p in patients
+    ]
 
-# Preluăm pacienții
-patients = get_all_patients(session)
+    df = pd.DataFrame(data)
 
-# Convertim în DataFrame
-data = [
-    {
-        "ID": p.patient_id,
-        "Nume": p.pseudonym,
-        "Data nașterii": p.date_of_birth.strftime("%Y-%m-%d") if p.date_of_birth else "",
-        "Gen": p.gender,
-        "Creat la": p.created_at.strftime("%Y-%m-%d %H:%M")
-    }
-    for p in patients
-]
+    # Fill NaN values with an empty string and convert to strings
+    df["ID"] = df["ID"].fillna("").astype(str)
+    df["Nume"] = df["Nume"].fillna("").astype(str)
 
-df = pd.DataFrame(data)
+    # Filtrare după search bar
+    if search_term:
+        df = df[df["ID"].str.lower().str.contains(search_term) | df["Nume"].str.lower().str.contains(search_term)]
 
-# Filtrare după search bar
-if search_term:
-    df = df[df["ID"].str.lower().str.contains(search_term) | df["Nume"].str.lower().str.contains(search_term)]
-
-# Afișăm tabelul
-st.dataframe(df, use_container_width=True)
-
-# Cleanup
-session.close()
+    # Afișăm tabelul
+    st.dataframe(df, use_container_width=True)

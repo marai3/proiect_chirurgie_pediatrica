@@ -1,9 +1,10 @@
 import streamlit as st
 import requests
 from jose import jwt
-import grafice as grafice
+import grafice
 import adauga_pacient 
 import adauga_rezultat
+import vizualizare
 
 def login_form():
     st.title("Autentificare")
@@ -29,20 +30,25 @@ def render_sidebar():
     st.sidebar.title("Navigare")
     if st.sidebar.button("Acasa", key="home"):
         st.session_state.page = "home"
+        
     if st.sidebar.button("Dashboard", key="dashboard"):
         st.session_state.page = "dashboard"
+
     with st.sidebar.expander("Adaugă Date", expanded=True):
-        if st.session_state.role in ["doctor", "nurse"]:
+        if st.session_state.role in ["doctor", "nurse", "admin"]:
             if st.button("Adaugă Pacient"):
                 st.session_state.page = "adauga_pacient"
             if st.button("Adaugă Rezultate"):
                 st.session_state.page = "adauga_rezultate"
         else:
             st.warning("Permisiuni insuficiente")
+
     if st.sidebar.button("Export", key="export"):
         st.session_state.page = "export"
+
     if st.sidebar.button("Vizualizare", key="vizualizare"):
         st.session_state.page = "vizualizare"
+
     if st.sidebar.button("Logout", key="logout"):
         st.session_state.username = None
         st.session_state.role = None
@@ -77,6 +83,9 @@ else:
         adauga_rezultat.pagina_adauga_rezultate()
     elif pagina == "export":
         #pagina_export()
+        pass
+    elif pagina == "vizualizare":
+        vizualizare.pagina_vizualizare()
         pass
     elif pagina == "logout":
         st.session_state.token = None

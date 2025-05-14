@@ -4,56 +4,12 @@ from passlib.context import CryptContext
 import pandas as pd
 from sqlalchemy.orm import Session
 from .auth import create_access_token, fake_users_db, role_required
-from .database import  SessionLocal, VitalSigns
+from .database import  SessionLocal, Patient, VitalSigns, LabResult, ClinicalScore, AccessLog, User
 from datetime import datetime
 
 app = FastAPI()
 
 pwd_context = CryptContext(schemes=["bcrypt"])
-
-# db classes
-class Patient(BaseModel):
-    patient_id: str
-    pseudonym: str
-    date_of_birth: str
-    gender: str
-    created_at: datetime
-    vitals: list
-    labs: list
-    scores: list
-
-class VitalData(BaseModel):
-    patient_id: str
-    heart_rate: int
-    spo2: float
-    temperature: float
-    timestamp: datetime
-
-class LabData(BaseModel):
-    patient_id: str
-    test_name: str
-    value: float
-    units: str
-    reference_range: str
-    timestamp: datetime
-
-class ClinicalScoreData(BaseModel):
-    patient_id: str
-    score_type: str
-    score_value: int
-    timestamp: datetime
-
-class AccessLog(BaseModel):
-    id: int
-    patient_id: str
-    user_role: str
-    event_type: str
-    timestamp: datetime
-
-class User(BaseModel):
-    username: str
-    hashed_password: str
-    role: str
 
 def get_db():
     db = SessionLocal()
@@ -64,19 +20,18 @@ def get_db():
 
 #endpoint pentru a obtine tokenul de acces
 @app.post("/token")
-def login(username: str = Form(...), password: str = Form(...)):
-    user = get_db().query(User).filter(User.username == username).first()
+def login(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == username).first()
 
-    if not user or not pwd_context.verify(password, user["hashed_password"]):
+    if not user or not pwd_context.verify(password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Credentiale incorecte")
     
-    token = create_access_token(data={"sub": username, "role": user["role"]})
+    token = create_access_token(data={"sub": username, "role": user.role})
     return {"access_token": token, "token_type": "bearer"}
 
 #endpoint pentru a adauga pacienti
 @app.post("/patients/")
-def add_patient(patient_id: str, pseudonym: str, date_of_birth: str, gender: str, created_at: datetime):
-    db = get_db()
+def add_patient(patient_id: str, pseudonym: str, date_of_birth: str, gender: str, created_at: datetime, db: Session = Depends(get_db)):
     if(patient_id is None or pseudonym is None or date_of_birth is None or gender is None or created_at is None):
         raise HTTPException(status_code=400, detail="Toate campurile sunt necesare")
     
@@ -97,8 +52,7 @@ def add_patient(patient_id: str, pseudonym: str, date_of_birth: str, gender: str
 
  #endpoint pentru a vizualiza un pacient    
 @app.get("/patients/{patient_id}")
-def get_patient(patient_id: str):
-    db = get_db()
+def get_patient(patient_id: str, db: Session = Depends(get_db)):
     patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
     
     if not patient:
@@ -117,8 +71,7 @@ def get_patient(patient_id: str):
 
 #endpoint pentru a vizualiza toti pacientii
 @app.get("/patients/")
-def get_all_patients():
-    db = get_db()
+def get_all_patients(db: Session = Depends(get_db)):
     patients = db.query(Patient).all()
     
     if not patients:
@@ -128,8 +81,7 @@ def get_all_patients():
 
 #endpoint pentru a adauga semne vitale unui pacient
 @app.post("/vital_signs/{patient_id}")
-def add_vital_signs(patient_id: str, heart_rate: int, spo2: float, temperature: float, timestamp: datetime):
-    db = get_db()
+def add_vital_signs(patient_id: str, heart_rate: int, spo2: float, temperature: float, timestamp: datetime, db: Session = Depends(get_db)):
     patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
     
     if not patient:
@@ -156,8 +108,7 @@ def add_vital_signs(patient_id: str, heart_rate: int, spo2: float, temperature: 
 
 #endpoint pentru a vizualiza semnele vitale ale unui pacient
 @app.get("/vital_signs/{patient_id}")
-def get_vital_signs(patient_id: str):
-    db = get_db()
+def get_vital_signs(patient_id: str, db: Session = Depends(get_db)):
     vital_signs = db.query(VitalSigns).filter(VitalSigns.patient_id == patient_id).all()
     
     if not vital_signs:
@@ -166,19 +117,18 @@ def get_vital_signs(patient_id: str):
     return [{"heart_rate": vs.heart_rate, "spo2": vs.spo2, "temperature": vs.temperature, "timestamp": vs.timestamp} for vs in vital_signs]
 
 #endpoint pentru a adauga rezultate de laborator pentru un pacient
-@app.post("/lab_data/{patient_id}")
-def add_lab_data(patient_id: str, test_name: str, value: float, units: str, reference_range: str, timestamp: datetime):
-    db = get_db()
+@app.post("/lab_results/{patient_id}")
+def add_lab_data(patient_id: str, test_name: str, value: float, units: str, reference_range: str, timestamp: datetime, db: Session = Depends(get_db)):
     patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
     
     if not patient:
         raise HTTPException(status_code=404, detail="Pacientul nu a fost gasit")
     if test_name is None or value is None or units is None or reference_range is None or timestamp is None:
         raise HTTPException(status_code=400, detail="Toate campurile sunt necesare")
-    elif db.query(LabData).filter(LabData.patient_id == patient_id, LabData.test_name == test_name, LabData.timestamp == timestamp).first() is not None:
+    elif db.query(LabResult).filter(LabResult.patient_id == patient_id, LabResult.test_name == test_name, LabResult.timestamp == timestamp).first() is not None:
         raise HTTPException(status_code=400, detail="Rezultatele de laborator exista deja pentru acest pacient la acest timestamp")
     
-    new_lab_result = LabData(
+    new_lab_result = LabResult(
         patient_id=patient_id,
         test_name=test_name,
         value=value,
@@ -195,9 +145,8 @@ def add_lab_data(patient_id: str, test_name: str, value: float, units: str, refe
 
 #endpoint pentru a vizualiza rezultatele de laborator ale unui pacient
 @app.get("/lab_results/{patient_id}")
-def get_lab_results(patient_id: str):
-    db = get_db()
-    lab_results = db.query(LabData).filter(LabData.patient_id == patient_id).all()
+def get_lab_results(patient_id: str, db: Session = Depends(get_db)):
+    lab_results = db.query(LabResult).filter(LabResult.patient_id == patient_id).all()
     
     if not lab_results:
         raise HTTPException(status_code=404, detail="Rezultatele de laborator nu au fost gasite")
@@ -206,18 +155,17 @@ def get_lab_results(patient_id: str):
 
 #endpoint pentru a adauga scoruri clinice pentru un pacient
 @app.post("/clinical_scores/{patient_id}")
-def add_clinical_scores(patient_id: str, score_type: str, score_value: int, timestamp: datetime):
-    db = get_db()
+def add_clinical_scores(patient_id: str, score_type: str, score_value: int, timestamp: datetime, db: Session = Depends(get_db)):
     patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
     
     if not patient:
         raise HTTPException(status_code=404, detail="Pacientul nu a fost gasit")
     if score_type is None or score_value is None or timestamp is None:
         raise HTTPException(status_code=400, detail="Toate campurile sunt necesare")
-    elif db.query(ClinicalScoreData).filter(ClinicalScoreData.patient_id == patient_id, ClinicalScoreData.score_type == score_type, ClinicalScoreData.timestamp == timestamp).first() is not None:
+    elif db.query(ClinicalScore).filter(ClinicalScore.patient_id == patient_id, ClinicalScore.score_type == score_type, ClinicalScore.timestamp == timestamp).first() is not None:
         raise HTTPException(status_code=400, detail="Scorurile clinice exista deja pentru acest pacient la acest timestamp")
     
-    new_clinical_score = ClinicalScoreData(
+    new_clinical_score = ClinicalScore(
         patient_id=patient_id,
         score_type=score_type,
         score_value=score_value,
@@ -232,9 +180,8 @@ def add_clinical_scores(patient_id: str, score_type: str, score_value: int, time
 
 #endpoint pentru a vizualiza scorurile clinice ale unui pacient    
 @app.get("/clinical_scores/{patient_id}")
-def get_clinical_scores(patient_id: str):
-    db = get_db()
-    clinical_scores = db.query(ClinicalScoreData).filter(ClinicalScoreData.patient_id == patient_id).all()
+def get_clinical_scores(patient_id: str, db: Session = Depends(get_db)):
+    clinical_scores = db.query(ClinicalScore).filter(ClinicalScore.patient_id == patient_id).all()
     
     if not clinical_scores:
         raise HTTPException(status_code=404, detail="Scorurile clinice nu au fost gasite")
@@ -243,8 +190,7 @@ def get_clinical_scores(patient_id: str):
     
 #endpoint pentru a vizualiza toate logurile de acces
 @app.get("/all_access_logs/")
-def get_all_access_logs():
-    db = get_db()
+def get_all_access_logs(db: Session = Depends(get_db)):
     access_logs = db.query(AccessLog).all()
     
     if not access_logs:
@@ -254,8 +200,7 @@ def get_all_access_logs():
 
 #endpoint pentru a vizualiza logurile de acces pentru un pacient
 @app.get("/access_logs/{patient_id}")
-def get_access_logs(patient_id: str):
-    db = get_db()
+def get_access_logs(patient_id: str, db: Session = Depends(get_db)):
     access_logs = db.query(AccessLog).filter(AccessLog.patient_id == patient_id).all()
     
     if not access_logs:
@@ -265,8 +210,7 @@ def get_access_logs(patient_id: str):
 
 #endpoint pentru exportarea datelor pacientului in format CSV
 @app.get("/export_csv/{patient_id}")
-def export_csv(patient_id: str):
-    db = get_db()
+def export_csv(patient_id: str, db: Session = Depends(get_db)):
     patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
     
     if not patient:
@@ -286,8 +230,7 @@ def export_csv(patient_id: str):
 
 #endpoint pentru exportarea datelor pacientului in format JSON
 @app.get("/export_json/{patient_id}")
-def export_json(patient_id: str):
-    db = get_db()
+def export_json(patient_id: str, db: Session = Depends(get_db)):
     patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
     
     if not patient:

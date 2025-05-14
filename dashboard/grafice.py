@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import requests
-from home import render_sidebar
 
 
 def run_monitorizare():
