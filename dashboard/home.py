@@ -5,6 +5,8 @@ import grafice
 import adauga_pacient 
 import adauga_rezultat
 import vizualizare
+import export
+import calculare_scor
 
 def login_form():
     st.title("Autentificare")
@@ -40,6 +42,8 @@ def render_sidebar():
                 st.session_state.page = "adauga_pacient"
             if st.button("Adaugă Rezultate"):
                 st.session_state.page = "adauga_rezultate"
+            if st.button("Calculează Scoruri Clinice"):
+                st.session_state.page = "calculeaza_scoruri"
         else:
             st.warning("Permisiuni insuficiente")
 
@@ -82,10 +86,11 @@ else:
     elif pagina == "adauga_rezultate":  
         adauga_rezultat.pagina_adauga_rezultate()
     elif pagina == "export":
-        #pagina_export()
-        pass
+        export.pagina_export()
     elif pagina == "vizualizare":
         vizualizare.pagina_vizualizare()
+    elif pagina == "calculeaza_scoruri":
+        #calculare_scor.pagina_scor()
         pass
     elif pagina == "logout":
         st.session_state.token = None

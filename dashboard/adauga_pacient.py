@@ -34,16 +34,16 @@ def pagina_adauga_pacient():
                 st.success(f"Pacient {pseudonym} înregistrat cu succes!")
                 st.balloons()
 
-    #Saave to database
-    db = SessionLocal()
-    new_patient = Patient(
-        pseudonym=pseudonym,
-        date_of_birth=date_of_birth,
-        gender=gender,
-        created_at=datetime.now()
-    )
-    db.add(new_patient)
-    db.commit()
-    db.refresh(new_patient)
-    db.close()
+                #Saave to database
+                db = SessionLocal()
+                new_patient = Patient(
+                    pseudonym=pseudonym,
+                    date_of_birth=date_of_birth,
+                    gender=gender,
+                    created_at=datetime.now()
+                )
+                db.add(new_patient)
+                db.commit()
+                db.refresh(new_patient)
+                db.close()
     
