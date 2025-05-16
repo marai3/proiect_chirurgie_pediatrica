@@ -90,7 +90,7 @@ else:
     elif pagina == "vizualizare":
         vizualizare.pagina_vizualizare()
     elif pagina == "calculeaza_scoruri":
-        #calculare_scor.pagina_scor()
+        calculare_scor.pagina_scor()
         pass
     elif pagina == "logout":
         st.session_state.token = None
