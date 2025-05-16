@@ -25,40 +25,60 @@ def run_monitorizare():
                 probleme.append(f"Temperatură ridicată: {row['Temperatura']}")
 
             probleme_str = "; ".join(probleme)
-            st.warning(f"⚠️ Pacient ID {row['patient_id']} – {probleme_str}")
+            st.warning(f"Pacient ID {row['patient_id']} – {probleme_str}")
     else:
         st.success("Nu sunt alerte critice pentru pacienți.")
+
+    st.markdown("---")
+    st.subheader("Caută și selectează pacienți pentru grafic")
+
+    # Lista unică cu pacienți
+    pacienti_unici = data["patient_id"].unique()
+    pacienti_selectati = st.multiselect(
+        "Selectează pacienți",
+        options=pacienti_unici,
+        default=last_alerts["patient_id"].unique().tolist()  # implicit selectați pacienții cu alerte
+    )
+
+    if len(pacienti_selectati) == 0:
+        st.info("Selectează cel puțin un pacient pentru a vedea graficul.")
+        return
 
     # Alegere semn vital
     metric = st.selectbox(
         "Alege semnul vital pentru a vizualiza graficul:",
-        ("Puls", "SpO₂", "Temperatura")
+        ("Puls", "SpO2", "Temperatura")
     )
 
-    if metric == "Puls":
-        fig = px.line(data, x="timestamp", y="Puls", color="patient_id", title="Ritmul Cardiac")
-    elif metric == "SpO₂":
-        fig = px.line(data, x="timestamp", y="SpO2", color="patient_id", title="Saturația în Oxigen (SpO₂)")
-    else:
-        fig = px.line(data, x="timestamp", y="Temperatura", color="patient_id", title="Temperatura Corpului")
+    # Filtrăm datele pentru pacienții selectați
+    data_filtrata = data[data["patient_id"].isin(pacienti_selectati)]
 
+    # Titlu grafic
+    titlu_metric = {
+        "Puls": "Ritmul Cardiac",
+        "SpO2": "Saturația în Oxigen (SpO₂)",
+        "Temperatura": "Temperatura Corpului"
+    }
+
+    # Graficul principal cu toți pacienții selectați
+    fig = px.line(
+        data_filtrata,
+        x="timestamp",
+        y=metric,
+        color="patient_id",
+        title=f"{titlu_metric[metric]} pentru pacienți selectați"
+    )
     st.plotly_chart(fig)
 
-    # Grafice detaliate doar pentru pacienții cu alerte
-    for idx, row in last_alerts.iterrows():
-        patient_data = data[data["patient_id"] == row["patient_id"]]
+    # Opțional: grafice detaliate pentru fiecare pacient selectat
+    st.subheader("Grafice detaliate pentru pacienții selectați")
+    for pacient in pacienti_selectati:
+        pacient_data = data_filtrata[data_filtrata["patient_id"] == pacient]
+        fig_detaliat = px.line(
+            pacient_data,
+            x="timestamp",
+            y=metric,
+            title=f"{titlu_metric[metric]} - Pacient ID {pacient}"
+        )
+        st.plotly_chart(fig_detaliat)
 
-        if row["Puls"] > 180:
-            fig_hr = px.line(patient_data, x="timestamp", y="Puls",
-                             title=f"📈 Puls pentru Pacientul {row['patient_id']}")
-            st.plotly_chart(fig_hr)
-
-        if row["SpO2"] < 90:
-            fig_spo2 = px.line(patient_data, x="timestamp", y="SpO2",
-                               title=f"📈 SpO₂ pentru Pacientul {row['patient_id']}")
-            st.plotly_chart(fig_spo2)
-
-        if row["Temperatura"] > 38.5:
-            fig_temp = px.line(patient_data, x="timestamp", y="Temperatura",
-                               title=f"📈 Temperatură pentru Pacientul {row['patient_id']}")
-            st.plotly_chart(fig_temp)
