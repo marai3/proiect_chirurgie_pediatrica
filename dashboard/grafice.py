@@ -2,10 +2,26 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+import os,sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from app.database import SessionLocal, Patient, VitalSigns
+
 def run_monitorizare():
     st.title("Monitorizare pacienți")
 
-    data = pd.read_csv("data/vitals_sample.csv")
+    db = SessionLocal()
+
+    data = db.query(
+        Patient.patient_id,
+        VitalSigns.heart_rate.label("Puls"),
+        VitalSigns.spo2.label("SpO2"),
+        VitalSigns.temperature.label("Temperatura"),
+        VitalSigns.timestamp
+    ).join(VitalSigns, Patient.patient_id == VitalSigns.patient_id).all()
+    db.close()
+
+    # Convertim rezultatele într-un DataFrame
+    data = pd.DataFrame(data, columns=["patient_id", "Puls", "SpO2", "Temperatura", "timestamp"])
     data["timestamp"] = pd.to_datetime(data["timestamp"])
 
     # Găsim alertele critice
@@ -33,7 +49,7 @@ def run_monitorizare():
     st.subheader("Caută și selectează pacienți pentru grafic")
 
     # Lista unică cu pacienți
-    pacienti_unici = data["patient_id"].unique()
+    pacienti_unici = data["patient_id"].unique().tolist()
     pacienti_selectati = st.multiselect(
         "Selectează pacienți",
         options=pacienti_unici,
