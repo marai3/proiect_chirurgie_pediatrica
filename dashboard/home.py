@@ -58,6 +58,7 @@ def render_sidebar():
         st.session_state.role = None
         st.session_state.token = None
         st.session_state.page = "login"
+        st.stop()
 
 def pagina_home():
     st.title("Bine ai venit!")
@@ -91,9 +92,5 @@ else:
         vizualizare.pagina_vizualizare()
     elif pagina == "calculeaza_scoruri":
         calculare_scor.pagina_scor()
-        pass
-    elif pagina == "logout":
-        st.session_state.token = None
-        st.session_state.username = None
-        st.session_state.role = None
-        st.session_state.page = "login"
+    else:
+        st.error("Pagina nu a fost găsită.")

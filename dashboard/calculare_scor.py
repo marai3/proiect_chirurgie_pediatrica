@@ -8,6 +8,10 @@ from app.database import SessionLocal, Patient, ClinicalScore, VitalSigns
 
 def pagina_scor():
 
+    if st.session_state.role not in ["doctor", "admin"]:
+        st.warning("Nu aveți permisiuni pentru această secțiune")
+        return
+
     st.title("Calculare Scoruri Clinice")
     st.write("---")
     
