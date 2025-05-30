@@ -232,3 +232,122 @@ def export_json(patient_id: str, db: Session = Depends(get_db)):
 @app.post("/")
 def root():
     return {"message": "API-ul este activ."}
+# endpoint pentru modificarea datelor unui pacient
+@app.put("/patients/{patient_id}")
+def update_patient(patient_id: str, pseudonym: str = None, date_of_birth: str = None, gender: str = None, db: Session = Depends(get_db)):
+    patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
+
+    if not patient:
+        raise HTTPException(status_code=404, detail="Pacientul nu a fost gasit")
+
+    if pseudonym:
+        patient.pseudonym = pseudonym
+    if date_of_birth:
+        patient.date_of_birth = date_of_birth
+    if gender:
+        patient.gender = gender
+
+    db.commit()
+    db.refresh(patient)
+    return {"message": "Pacient actualizat cu succes", "patient": patient}
+
+# endpoint pentru stergerea unui pacient
+@app.delete("/patients/{patient_id}")
+def delete_patient(patient_id: str, db: Session = Depends(get_db)):
+    patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Pacientul nu a fost gasit")
+
+    db.delete(patient)
+    db.commit()
+    return {"message": "Pacient sters cu succes"}
+
+
+# endpoint pentru stergerea rezultatelor de laborator
+@app.delete("/lab_results/{patient_id}/{timestamp}")
+def delete_lab_result(patient_id: str, timestamp: datetime, db: Session = Depends(get_db)):
+    result = db.query(LabResult).filter(LabResult.patient_id == patient_id, LabResult.timestamp == timestamp).first()
+    if not result:
+        raise HTTPException(status_code=404, detail="Rezultatul de laborator nu a fost gasit")
+
+    db.delete(result)
+    db.commit()
+    return {"message": "Rezultat de laborator sters cu succes"}
+
+
+# endpoint pentru stergerea scorurilor clinice
+@app.delete("/clinical_scores/{patient_id}/{timestamp}")
+def delete_clinical_score(patient_id: str, timestamp: datetime, db: Session = Depends(get_db)):
+    score = db.query(ClinicalScore).filter(ClinicalScore.patient_id == patient_id, ClinicalScore.timestamp == timestamp).first()
+    if not score:
+        raise HTTPException(status_code=404, detail="Scorul clinic nu a fost gasit")
+
+    db.delete(score)
+    db.commit()
+    return {"message": "Scor clinic sters cu succes"}
+
+
+# endpoint pentru stergerea semnelor vitale
+@app.delete("/vital_signs/{patient_id}/{timestamp}")
+def delete_vital_sign(patient_id: str, timestamp: datetime, db: Session = Depends(get_db)):
+    vs = db.query(VitalSigns).filter(VitalSigns.patient_id == patient_id, VitalSigns.timestamp == timestamp).first()
+    if not vs:
+        raise HTTPException(status_code=404, detail="Semnul vital nu a fost gasit")
+
+    db.delete(vs)
+    db.commit()
+    return {"message": "Semn vital sters cu succes"}
+
+
+# endpoint pentru modificarea unui rezultat de laborator
+@app.put("/lab_results/{patient_id}/{timestamp}")
+def update_lab_result(patient_id: str, timestamp: datetime, value: float = None, units: str = None, reference_range: str = None, db: Session = Depends(get_db)):
+    result = db.query(LabResult).filter(LabResult.patient_id == patient_id, LabResult.timestamp == timestamp).first()
+    if not result:
+        raise HTTPException(status_code=404, detail="Rezultatul nu a fost gasit")
+
+    if value is not None:
+        result.value = value
+    if units is not None:
+        result.units = units
+    if reference_range is not None:
+        result.reference_range = reference_range
+
+    db.commit()
+    db.refresh(result)
+    return {"message": "Rezultatul laboratorului a fost actualizat", "lab_result": result}
+
+
+# endpoint pentru modificarea unui scor clinic
+@app.put("/clinical_scores/{patient_id}/{timestamp}")
+def update_clinical_score(patient_id: str, timestamp: datetime, score_value: int = None, db: Session = Depends(get_db)):
+    score = db.query(ClinicalScore).filter(ClinicalScore.patient_id == patient_id, ClinicalScore.timestamp == timestamp).first()
+    if not score:
+        raise HTTPException(status_code=404, detail="Scorul nu a fost gasit")
+
+    if score_value is not None:
+        score.score_value = score_value
+
+    db.commit()
+    db.refresh(score)
+    return {"message": "Scorul clinic a fost actualizat", "clinical_score": score}
+
+
+# endpoint pentru modificarea semnelor vitale
+@app.put("/vital_signs/{patient_id}/{timestamp}")
+def update_vital_sign(patient_id: str, timestamp: datetime, heart_rate: int = None, spo2: float = None, temperature: float = None, db: Session = Depends(get_db)):
+    vs = db.query(VitalSigns).filter(VitalSigns.patient_id == patient_id, VitalSigns.timestamp == timestamp).first()
+    if not vs:
+        raise HTTPException(status_code=404, detail="Semnul vital nu a fost gasit")
+
+    if heart_rate is not None:
+        vs.heart_rate = heart_rate
+    if spo2 is not None:
+        vs.spo2 = spo2
+    if temperature is not None:
+        vs.temperature = temperature
+
+    db.commit()
+    db.refresh(vs)
+    return {"message": "Semnul vital a fost actualizat", "vital_sign": vs}
+
