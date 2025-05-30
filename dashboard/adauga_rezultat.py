@@ -6,6 +6,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app.database import SessionLocal, Patient, LabResult
+from blockchain.MedicalLog import log_event
 
 def pagina_adauga_rezultate():
     if st.session_state.role not in ["doctor", "nurse", "admin"]:
@@ -42,6 +43,12 @@ def pagina_adauga_rezultate():
         submitted = st.form_submit_button("Salvează Rezultat")
         
         if submitted:
+            log_event(
+                user_name=st.session_state.username,
+                user_role=st.session_state.role,
+                patient_id=patient_id,
+                event_type="adauga_rezultat_laborator"
+            )
             if not all([patient_id, test_name, value, units, data_rezultat]):
                 st.error("Completați câmpurile obligatorii (*)")
             else:

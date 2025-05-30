@@ -7,7 +7,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app.database import SessionLocal, Patient, VitalSigns, LabResult, ClinicalScore
-import io
+from blockchain.MedicalLog import log_event, get_logs_by_patient_id
 
 def pagina_export():
     st.title("Exportă Date Vitale din Baza de Date")
@@ -30,6 +30,8 @@ def pagina_export():
     date_vitale = db.query(VitalSigns).filter(VitalSigns.patient_id == patient_id).order_by(VitalSigns.timestamp).all()
     rezultate_laborator = db.query(LabResult).filter(LabResult.patient_id == patient_id).order_by(LabResult.timestamp).all()
     scoruri_clinice = db.query(ClinicalScore).filter(ClinicalScore.patient_id == patient_id).order_by(ClinicalScore.timestamp).all()
+    access_logs = get_logs_by_patient_id(patient_id)
+    print(access_logs)
 
     alegere = [st.checkbox("Date pacient", value=True, key="date_pacient")]
 
@@ -47,6 +49,9 @@ def pagina_export():
         alegere.append(st.checkbox("Scoruri clinice", value=False, key="scoruri_clinice"))
     else:
         st.info("Acest pacient nu are scoruri clinice salvate.")
+
+    if st.session_state.role in ["doctor", "nurse", "admin"]:
+        alegere.append(st.checkbox("Jurnal de acces", value=False, key="jurnal_acces"))
     
     if not alegere:
         st.info("Selectează cel puțin o opțiune pentru a exporta datele.")
@@ -96,6 +101,16 @@ def pagina_export():
                 "Timestamp": cs.timestamp.strftime("%Y-%m-%d %H:%M") if cs.timestamp else ""
             })
 
+    if st.session_state.get("jurnal_acces", True) and access_logs:
+        for log in access_logs:
+            data.append({
+                "ID pacient": log["patient_id"],
+                "Utilizator": log["user_name"],
+                "Rol utilizator": log["user_role"],
+                "Tip eveniment": log["event_type"],
+                "Timestamp": log["timestamp"]
+            })
+
     df = pd.DataFrame(data)
     if df.empty:
         st.warning("Nu există date de exportat pentru selecția făcută.")
@@ -106,19 +121,35 @@ def pagina_export():
 
     if format_export == "CSV":
         csv = df.to_csv(index=False, encoding="utf-8-sig")
-        st.download_button(
+        download = st.download_button(
             label="Descarcă CSV",
             data=csv,
             file_name=f"{patient_id}_{pseudonym}_data_{datetime.datetime.now()}.csv",
             mime="text/csv"
         )
+        if download:
+            log_event(
+                user_name=st.session_state.username,
+                user_role=st.session_state.role,
+                patient_id=patient_id,
+                event_type="export_csv"
+            )
+            st.success("CSV descărcat cu succes!")
     else:
         json_data = df.to_json(orient="records", lines=True, force_ascii=False)
-        st.download_button(
+        download = st.download_button(
             label="Descarcă JSON",
             data=json_data,
             file_name=f"{patient_id}_{pseudonym}_data_{datetime.datetime.now()}.json",
             mime="application/json"
         )
+        if download:
+            log_event(
+                user_name=st.session_state.username,
+                user_role=st.session_state.role,
+                patient_id=patient_id,
+                event_type="export_json"
+            )
+            st.success("JSON descărcat cu succes!")
 
     db.close()

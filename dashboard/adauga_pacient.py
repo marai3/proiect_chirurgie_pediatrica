@@ -6,6 +6,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app.database import SessionLocal, Patient
+from blockchain.MedicalLog import log_event
 
 def pagina_adauga_pacient():
     if st.session_state.role not in ["doctor", "nurse", "admin"]:
@@ -28,6 +29,8 @@ def pagina_adauga_pacient():
         submitted = st.form_submit_button("Salvează Pacient")
         
         if submitted:
+            
+            
             if not all([pseudonym, date_of_birth, gender]):
                 st.error("Completați câmpurile obligatorii (*)")
             else:
@@ -42,8 +45,17 @@ def pagina_adauga_pacient():
                     gender=gender,
                     created_at=datetime.now()
                 )
+
                 db.add(new_patient)
                 db.commit()
                 db.refresh(new_patient)
+
+                log_event(
+                    user_name=st.session_state.username,
+                    user_role=st.session_state.role,
+                    patient_id=new_patient.patient_id,
+                    event_type="adauga_pacient"
+                )
+
                 db.close()
     

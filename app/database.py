@@ -58,15 +58,6 @@ class ClinicalScore(Base):
 
     patient = relationship("Patient", back_populates="scores")
 
-class AccessLog(Base):
-    __tablename__ = "access_logs"
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    patient_id = Column(Integer, ForeignKey("patients.patient_id"))
-    username = Column(String)
-    role = Column(String)
-    event_type = Column(String)            # ex: View, Edit, Delete, Add
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
-
 class User(Base):
     __tablename__ = "users"
     username = Column(String, primary_key=True)

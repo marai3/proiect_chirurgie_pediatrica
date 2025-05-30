@@ -3,8 +3,8 @@ from pydantic import BaseModel
 from passlib.context import CryptContext
 import pandas as pd
 from sqlalchemy.orm import Session
-from .auth import create_access_token, fake_users_db, role_required
-from .database import  SessionLocal, Patient, VitalSigns, LabResult, ClinicalScore, AccessLog, User
+from .auth import create_access_token
+from .database import  SessionLocal, Patient, VitalSigns, LabResult, ClinicalScore, User
 from datetime import datetime
 
 app = FastAPI()
@@ -187,26 +187,6 @@ def get_clinical_scores(patient_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Scorurile clinice nu au fost gasite")
     
     return [{"score_type": cs.score_type, "score_value": cs.score_value, "timestamp": cs.timestamp} for cs in clinical_scores]
-    
-#endpoint pentru a vizualiza toate logurile de acces
-@app.get("/all_access_logs/")
-def get_all_access_logs(db: Session = Depends(get_db)):
-    access_logs = db.query(AccessLog).all()
-    
-    if not access_logs:
-        raise HTTPException(status_code=404, detail="Nu exista loguri de acces")
-    
-    return [{"id": log.id, "patient_id": log.patient_id, "user_role": log.user_role, "event_type": log.event_type, "timestamp": log.timestamp} for log in access_logs]
-
-#endpoint pentru a vizualiza logurile de acces pentru un pacient
-@app.get("/access_logs/{patient_id}")
-def get_access_logs(patient_id: str, db: Session = Depends(get_db)):
-    access_logs = db.query(AccessLog).filter(AccessLog.patient_id == patient_id).all()
-    
-    if not access_logs:
-        raise HTTPException(status_code=404, detail="Nu exista loguri de acces pentru acest pacient")
-    
-    return [{"id": log.id, "patient_id": log.patient_id, "user_role": log.user_role, "event_type": log.event_type, "timestamp": log.timestamp} for log in access_logs]
 
 #endpoint pentru exportarea datelor pacientului in format CSV
 @app.get("/export_csv/{patient_id}")

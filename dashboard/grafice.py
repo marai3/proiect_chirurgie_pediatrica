@@ -43,7 +43,7 @@ def init_simulare():
         st.session_state.sim = True
         thread = threading.Thread(target=simulare_background, daemon=True)
         thread.start()
-        st.toast("Simularea a fost inițiată!", icon="✅")
+        st.toast("Simularea a fost inițiată!")
         db = SessionLocal()
         db.query(VitalSigns).delete()  # ștergem datele vechi
         db.commit()

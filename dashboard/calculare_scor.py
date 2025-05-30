@@ -5,6 +5,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app.database import SessionLocal, Patient, ClinicalScore, VitalSigns
+from blockchain.MedicalLog import log_event
 
 def pagina_scor():
 
@@ -55,6 +56,7 @@ def pagina_scor():
             submit = st.form_submit_button("Calculează scorul")
 
             if submit:
+                log_event(st.session_state.username, st.session_state.role, patient_id, "calculeaza_news")
                 news_score = 0
 
                 # Respirație
@@ -162,6 +164,7 @@ def pagina_scor():
             submit = st.form_submit_button("Calculează scorul")
 
             if submit:
+                log_event(st.session_state.username, st.session_state.role, patient_id, "calculeaza_pews")
                 pews_score = 0
 
                 # Frecvența cardiacă
@@ -259,6 +262,7 @@ def pagina_scor():
             submit = st.form_submit_button("Calculează scorul PRISM")
 
             if submit:
+                log_event(st.session_state.username, st.session_state.role, patient_id, "calculeaza_prism")
                 prism_score = 0
 
                 # SBP
@@ -390,6 +394,7 @@ def pagina_scor():
             submit = st.form_submit_button("Calculează scorul GCS Pediatric")
 
             if submit:
+                log_event(st.session_state.username, st.session_state.role, patient_id, "calculeaza_gcs_pediatric")
                 ocular_score = int(ocular.split(" - ")[0])
                 verbal_score = int(verbal.split(" - ")[0])
                 motor_score = int(motor.split(" - ")[0])
@@ -436,6 +441,7 @@ def pagina_scor():
             submit = st.form_submit_button("Calculează scorul")
 
             if submit:
+                log_event(st.session_state.username, st.session_state.role, patient_id, "calculeaza_psofa")
                 psofa_score = 0
 
                 # PaO₂/FiO₂

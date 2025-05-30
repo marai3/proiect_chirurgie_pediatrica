@@ -7,6 +7,7 @@ import adauga_rezultat
 import vizualizare
 import export
 import calculare_scor
+from blockchain.MedicalLog import log_event
 
 def login_form():
     st.title("Autentificare")
@@ -22,6 +23,7 @@ def login_form():
                 st.session_state.token = token
                 st.session_state.username = decoded["sub"]
                 st.session_state.role = decoded["role"]
+                log_event(user_name=st.session_state.username, user_role=st.session_state.role, patient_id=0 , event_type="login")
             else:
                 st.error("Login eșuat.")
                 st.session_state.token = None
@@ -58,6 +60,7 @@ def render_sidebar():
         st.session_state.role = None
         st.session_state.token = None
         st.session_state.page = "login"
+        log_event(user_name=st.session_state.username, user_role=st.session_state.role, patient_id=0, event_type="logout")
         st.stop()
 
 def pagina_home():
