@@ -1,69 +1,82 @@
 import streamlit as st
 from sqlalchemy.orm import Session
-from app.main import get_db
-from app.database import Pacient, LabResult, ClinicalScore
-from utils import log_access 
+import sys, os
+import datetime
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from app.database import SessionLocal, Patient, LabResult, ClinicalScore
+from blockchain.MedicalLog import log_event
 
 def modificare_date():
     st.title("Modificare date")
-    db: Session = next(get_db())
+    db = SessionLocal()
 
-    entitate = st.radio("Ce dorești să modifici?", ["Pacient", "Rezultat de laborator", "Scor clinic"])
+    entitate = st.radio("Ce dorești să modifici?", ["Pacient", "Rezultat de laborator"])
 
     if entitate == "Pacient":
-        pacienti = db.query(Pacient).all()
-        pacient_selectat = st.selectbox("Selectează pacientul", pacienti, format_func=lambda p: f"{p.id} - {p.nume}")
+        pacienti = db.query(Patient).order_by(Patient.patient_id).all()
+        pacient_selectat = st.selectbox("Selectează pacientul", pacienti, format_func=lambda p: f"{p.patient_id} - {p.pseudonym}")
 
-        atribut = st.radio("Alege atributul de modificat", ["nume", "data_nasterii", "cnp", "istoric", "diagnostic", "telefon", "medicamente", "programare_data", "programare_ora", "doctor"])
+        with st.form("form_pacient"):
+            cols = st.columns(2)
+            pseudonym = st.text_input("Pseudonim*", value=pacient_selectat.pseudonym)
 
-        valoare_noua = None
-        if atribut in ["nume", "cnp", "istoric", "diagnostic", "telefon", "medicamente", "doctor"]:
-            valoare_noua = st.text_input("Introduceți noua valoare:")
-        elif atribut == "data_nasterii":
-            valoare_noua = st.date_input("Selectați noua dată:")
-        elif atribut in ["programare_data"]:
-            valoare_noua = st.date_input("Selectează noua dată pentru programare:")
-        elif atribut in ["programare_ora"]:
-            valoare_noua = st.time_input("Selectează noua oră pentru programare:")
+            with cols[0]:
+                date_of_birth = st.date_input("Data nașterii*", max_value=datetime.datetime.now(), value=pacient_selectat.date_of_birth)
+                
+            with cols[1]:
+                gender = st.selectbox("Gen*", ["Masculin", "Feminin", "Altul"], index=["Masculin", "Feminin", "Altul"].index(pacient_selectat.gender))
+        
+            submit = st.form_submit_button("Modifică")
 
-        if st.button("Modifică"):
-            setattr(pacient_selectat, atribut, valoare_noua)
-            db.commit()
-            log_access(db, f"Modificare {atribut} pentru pacientul {pacient_selectat.id}")
-            st.success("Modificare efectuată!")
+            if submit:
+                if not pseudonym or not date_of_birth or not gender:
+                    st.error("Completați câmpurile obligatorii (*)")
+                else:
+                    db.query(Patient).filter(Patient.patient_id == pacient_selectat.patient_id).update({
+                        Patient.pseudonym: pseudonym,
+                        Patient.date_of_birth: date_of_birth,
+                        Patient.gender: gender
+                    })
+                    db.commit()
+                    log_event(st.session_state.username, st.session_state.role, pacient_selectat.patient_id, "modificare date pacient")
+                    st.success("Modificare efectuată!")
+                    pacienti = db.query(Patient).order_by(Patient.patient_id).all()  # Reîncărcăm lista de pacienți pentru a reflecta modificările
 
     elif entitate == "Rezultat de laborator":
-        rezultate = db.query(LabResult).all()
-        rezultat_selectat = st.selectbox("Selectează rezultatul", rezultate, format_func=lambda r: f"{r.id} - {r.tip_test}")
+        pacienti = db.query(Patient).order_by(Patient.patient_id).all()
+        pacient_selectat = st.selectbox("Selectează pacientul", pacienti, format_func=lambda p: f"{p.patient_id} - {p.pseudonym}")
+        rezultate = db.query(LabResult).filter(LabResult.patient_id == pacient_selectat.patient_id).all()
+        if not rezultate:
+            st.warning("Nu există rezultate de laborator pentru acest pacient.")
+            return
+        
+        rezultat_selectat = st.selectbox("Selectează rezultatul de laborator", rezultate, format_func=lambda r: f"{r.id} - {r.test_name}")
 
-        atribut = st.radio("Alege atributul de modificat", ["tip_test", "valoare", "unitate", "data"])
-        if atribut in ["tip_test", "unitate"]:
-            valoare_noua = st.text_input("Introduceți noua valoare:")
-        elif atribut == "valoare":
-            valoare_noua = st.number_input("Introduceți noua valoare:", format="%.2f")
-        elif atribut == "data":
-            valoare_noua = st.date_input("Selectează noua dată:")
+        with st.form("form_rezultat"):
+            cols = st.columns(2)
+            with cols[0]:
+                test_name = st.selectbox("Test*", ["CRP", "Leucocite", "Hemoglobina", "ALT", "AST", "Glicemie", "Altele"], index=["CRP", "Leucocite", "Hemoglobina", "ALT", "AST", "Glicemie", "Altele"].index(rezultat_selectat.test_name))
+                value = st.number_input("Valoare*", step=0.1, value=rezultat_selectat.value)
+                
+            with cols[1]:
+                units = st.text_input("Unitate*", value=rezultat_selectat.units)
+                reference_range = st.text_input("Interval de referință", value=rezultat_selectat.reference_range)
+        
+            data_rezultat = st.date_input("Data rezultatului*", value=rezultat_selectat.timestamp, max_value=datetime.datetime.now())
 
-        if st.button("Modifică"):
-            setattr(rezultat_selectat, atribut, valoare_noua)
-            db.commit()
-            log_access(db, f"Modificare {atribut} pentru rezultatul {rezultat_selectat.id}")
-            st.success("Modificare efectuată!")
+            submit = st.form_submit_button("Modifică")
 
-    elif entitate == "Scor clinic":
-        scoruri = db.query(ClinicalScore).all()
-        scor_selectat = st.selectbox("Selectează scorul", scoruri, format_func=lambda s: f"{s.id} - {s.tip_scor}")
-
-        atribut = st.radio("Alege atributul de modificat", ["tip_scor", "valoare", "data"])
-        if atribut == "tip_scor":
-            valoare_noua = st.text_input("Introduceți noul tip de scor:")
-        elif atribut == "valoare":
-            valoare_noua = st.number_input("Introduceți noua valoare:", format="%.2f")
-        elif atribut == "data":
-            valoare_noua = st.date_input("Selectează noua dată:")
-
-        if st.button("Modifică"):
-            setattr(scor_selectat, atribut, valoare_noua)
-            db.commit()
-            log_access(db, f"Modificare {atribut} pentru scorul {scor_selectat.id}")
-            st.success("Modificare efectuată!")
+            if submit:
+                if not test_name or not value or not units or not data_rezultat:
+                    st.error("Completați câmpurile obligatorii (*)")
+                else:
+                    db.query(LabResult).filter(LabResult.id == rezultat_selectat.id).update({
+                        LabResult.test_name: test_name,
+                        LabResult.value: value,
+                        LabResult.units: units,
+                        LabResult.reference_range: reference_range,
+                        LabResult.timestamp: data_rezultat
+                    })
+                    db.commit()
+                    log_event(st.session_state.username, st.session_state.role, pacient_selectat.patient_id, "modificare rezultat laborator")
+                    st.success("Modificare efectuată!")

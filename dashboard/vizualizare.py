@@ -41,7 +41,7 @@ def pagina_vizualizare():
     # Selectare pacient din tabel
     if not df.empty:
         ids = df["ID"].tolist()
-        selected_id = st.radio("Selectează un pacient pentru detalii:", ids)
+        selected_id = st.radio("Selectează un pacient pentru detalii:", ids, horizontal=True)
 
         # Detalii despre pacientul selectat
         patient = db.query(Patient).filter(Patient.patient_id == selected_id).first()

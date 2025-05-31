@@ -16,7 +16,7 @@ def pagina_export():
     db: Session = SessionLocal()
 
     # Obține lista pacienților
-    pacienti = db.query(Patient).all()
+    pacienti = db.query(Patient).order_by(Patient.patient_id).all()
     if not pacienti:
         st.warning("Nu există pacienți în baza de date.")
         return
@@ -31,7 +31,7 @@ def pagina_export():
     rezultate_laborator = db.query(LabResult).filter(LabResult.patient_id == patient_id).order_by(LabResult.timestamp).all()
     scoruri_clinice = db.query(ClinicalScore).filter(ClinicalScore.patient_id == patient_id).order_by(ClinicalScore.timestamp).all()
     access_logs = get_logs_by_patient_id(patient_id)
-    print(access_logs)
+    #print(access_logs)
 
     alegere = [st.checkbox("Date pacient", value=True, key="date_pacient")]
 

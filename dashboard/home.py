@@ -1,12 +1,7 @@
 import streamlit as st
 import requests
 from jose import jwt
-import grafice
-import adauga_pacient 
-import adauga_rezultat
-import vizualizare
-import export
-import calculare_scor
+import grafice, adauga_pacient, adauga_rezultat, export, vizualizare, calculare_scor, modificare_date, stergere
 from blockchain.MedicalLog import log_event
 
 def login_form():
@@ -38,7 +33,7 @@ def render_sidebar():
     if st.sidebar.button("Dashboard", key="dashboard"):
         st.session_state.page = "dashboard"
 
-    with st.sidebar.expander("Adaugă Date", expanded=True):
+    with st.sidebar.expander("Adaugă Date", expanded=False):
         if st.session_state.role in ["doctor", "nurse", "admin"]:
             if st.button("Adaugă Pacient"):
                 st.session_state.page = "adauga_pacient"
@@ -46,6 +41,15 @@ def render_sidebar():
                 st.session_state.page = "adauga_rezultate"
             if st.button("Calculează Scoruri Clinice"):
                 st.session_state.page = "calculeaza_scoruri"
+        else:
+            st.warning("Permisiuni insuficiente")
+
+    with st.sidebar.expander("Modifică Date", expanded=False):
+        if st.session_state.role in ["doctor", "admin"]:
+            if st.button("Modifică Date Pacient"):
+                st.session_state.page = "modificare_date"
+            if st.button("Șterge Date Pacient"):
+                st.session_state.page = "stergere"
         else:
             st.warning("Permisiuni insuficiente")
 
@@ -95,5 +99,9 @@ else:
         vizualizare.pagina_vizualizare()
     elif pagina == "calculeaza_scoruri":
         calculare_scor.pagina_scor()
+    elif pagina == "modificare_date":
+        modificare_date.modificare_date()
+    elif pagina == "stergere":
+        stergere.delete_patient_data()
     else:
         st.error("Pagina nu a fost găsită.")

@@ -36,7 +36,7 @@ def pagina_adauga_rezultate():
             
         with cols[1]:
             units = st.text_input("Unitate*")
-            reference_range = st.text_input("Interval de referință")
+            reference_range = st.text_input("Interval de referință*")
         
         data_rezultat = st.date_input("Data rezultatului*", value=datetime.now())
         
@@ -49,7 +49,7 @@ def pagina_adauga_rezultate():
                 patient_id=patient_id,
                 event_type="adauga_rezultat_laborator"
             )
-            if not all([patient_id, test_name, value, units, data_rezultat]):
+            if not all([patient_id, test_name, value, units, reference_range, data_rezultat]):
                 st.error("Completați câmpurile obligatorii (*)")
             else:
                 st.success("Rezultat laborator înregistrat cu succes!")
