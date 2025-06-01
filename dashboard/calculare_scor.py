@@ -35,6 +35,17 @@ def pagina_scor():
     if not date_vitale:
         st.warning("Acest pacient nu are date vitale salvate.")
 
+    #preluam ultimele date vitale inregistrate
+    ultimele_date_vitale = date_vitale[-1] if date_vitale else None
+    if ultimele_date_vitale:
+        date_vitale_df = pd.DataFrame({
+            "Timestamp": [ultimele_date_vitale.timestamp],
+            "Saturație Oxigen (%)": [ultimele_date_vitale.spo2],
+            "Temperatură (°C)": [ultimele_date_vitale.temperature],
+            "Frecvență Cardiacă (bpm)": [ultimele_date_vitale.heart_rate],
+        })
+    st.dataframe(date_vitale_df, use_container_width=True)
+
     st.subheader("Formular de calculare a scorului")
 
     if st.session_state.get("scor_selectat") == "NEWS":

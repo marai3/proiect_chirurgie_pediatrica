@@ -5,6 +5,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app.database import SessionLocal, Patient
+from blockchain.MedicalLog import get_logs_by_patient_id
 
 def pagina_vizualizare():
     # Interfață Streamlit
@@ -29,6 +30,7 @@ def pagina_vizualizare():
         }
         for p in patients
     ]
+    data.sort(key=lambda x: x["ID"])
     df = pd.DataFrame(data)
 
     # Filtrare după search bar
