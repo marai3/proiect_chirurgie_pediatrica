@@ -134,7 +134,7 @@ def run_monitorizare():
     )
     st.plotly_chart(fig)
 
-    # Opțional: grafice detaliate pentru fiecare pacient selectat
+    #grafice detaliate pentru fiecare pacient selectat
     st.subheader("Grafice detaliate pentru pacienții selectați")
     for pacient in pacienti_selectati:
         pacient_data = data_filtrata[data_filtrata["pseudonym"] == pacient]
