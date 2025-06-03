@@ -53,7 +53,7 @@ def run_monitorizare():
     st.title("Monitorizare pacienți")
 
     init_simulare()
-    st_autorefresh(interval=10000, limit=None, key="data_refresh")
+    st_autorefresh(interval=5000, limit=None, key="data_refresh")
 
     db = SessionLocal()
 
